@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Class Schedule!</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --term-bg: rgba(10, 15, 20, 0.85);
+            --primary-neon: #00ff41;
+            --secondary-neon: #008f11;
+            --accent-blue: #00d2ff;
+            --accent-orange: #ffaa00;
+            --text-main: #e0e0e0;
+            --text-muted: #555555;
+            --border-glow: 0 0 10px rgba(0, 255, 65, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fira Code', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .boot-text {
+            color: var(--primary-neon);
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .boot-subtext {
+            color: var(--text-muted);
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; text-shadow: 0 0 20px var(--primary-neon); }
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        #hard-flash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: white; z-index: 9999; opacity: 0; pointer-events: none;
+        }
+
+        #app-container {
+            width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+        }
+
+        .terminal-window {
+            width: 100%; max-width: 800px; height: 90vh;
+            background: var(--term-bg);
+            border: 1px solid var(--secondary-neon);
+            box-shadow: 0 0 30px rgba(0, 143, 17, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #111; padding: 10px 20px;
+            border-bottom: 1px solid var(--secondary-neon);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .window-controls span {
+            display: inline-block; width: 12px; height: 12px;
+            border-radius: 50%; margin-right: 8px;
+        }
+        .close { background: #ff5f56; }
+        .min { background: #ffbd2e; }
+        .max { background: #27c93f; }
+        .title { color: var(--primary-neon); font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; }
+
+        .content-area { padding: 20px; flex-grow: 1; overflow-y: auto; position: relative; }
+        .content-area::-webkit-scrollbar { width: 8px; }
+        .content-area::-webkit-scrollbar-thumb { background: var(--secondary-neon); }
+
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px dashed var(--text-muted); padding-bottom: 10px; }
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; transition: all 0.3s; position: relative; }
+        .tab-btn:hover { color: var(--primary-neon); }
+        .tab-btn.active { color: var(--primary-neon); font-weight: bold; }
+        .tab-btn.active::before { content: '>'; position: absolute; left: -15px; color: var(--primary-neon); animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .schedule-day { display: none; flex-direction: column; gap: 15px; }
+        .schedule-day.active { display: flex; }
+
+        .class-card {
+            background: rgba(0, 20, 0, 0.4); border: 1px solid #222;
+            padding: 15px 20px; border-left: 4px solid var(--primary-neon);
+            position: relative; overflow: hidden; transition: all 0.2s;
+        }
+        .type-sync { border-left-color: var(--accent-blue); }
+        .type-break { border-left-color: var(--accent-orange); }
+
+        .class-card:hover {
+            background: rgba(0, 40, 0, 0.6); border-color: var(--primary-neon);
+            box-shadow: var(--border-glow); transform: translateX(5px);
+        }
+
+        .class-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .time-tag { background: #111; color: var(--text-muted); padding: 2px 8px; font-size: 0.8rem; border: 1px solid var(--text-muted); margin-bottom: 8px; display: inline-block; }
+        .class-card:hover .time-tag { color: var(--primary-neon); border-color: var(--primary-neon); }
+        .class-name { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+        .class-details { font-size: 0.9rem; color: #aaa; }
+        .keyword { color: var(--primary-neon); }
+        .type-sync .keyword { color: var(--accent-blue); }
+
+        .execute-btn {
+            background: transparent; border: 1px solid var(--primary-neon); color: var(--primary-neon);
+            padding: 5px 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-size: 0.8rem;
+        }
+        .type-sync .execute-btn { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .type-break .execute-btn { display: none; }
+        .execute-btn:hover { background: var(--primary-neon); color: #000; box-shadow: 0 0 15px var(--primary-neon); }
+
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none; backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: #0a0a0a; border: 2px solid var(--primary-neon); box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
+            padding: 30px; max-width: 500px; width: 90%; text-align: center; transform: scale(0.8); opacity: 0;
+        }
+        .modal-title { color: #fff; font-size: 1.2rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .modal-body { color: var(--primary-neon); font-size: 1.1rem; line-height: 1.6; min-height: 80px; }
+        .close-btn { margin-top: 25px; background: #111; border: 1px solid #555; color: #fff; padding: 8px 20px; cursor: pointer; transition: all 0.2s; }
+        .close-btn:hover { background: var(--primary-neon); color: #000; border-color: var(--primary-neon); }
+        .typed-cursor { opacity: 1; animation: typedjsBlink 0.7s infinite; }
+    </style>
+</head>
+<body>
+
+<div id="boot-screen" onclick="bootSystem()">
+    <div class="boot-text">[ CLICK TO BOOT SYSTEM ]</div>
+    <div class="boot-subtext">Requires interaction to initialize audio engine</div>
+</div>
+
+<div id="app-container">
+    <canvas id="matrix-canvas"></canvas>
+
+    <div id="hard-flash"></div>
+
+    <div id="modal-overlay">
+        <div class="modal-box" id="modal-box">
+            <div class="modal-title">SYSTEM EVENT LOG</div>
+            <div class="modal-body">
+                <span id="typewriter-text"></span><span class="typed-cursor">_</span>
+            </div>
+            <button class="close-btn" onclick="closeModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <div class="terminal-window" id="terminal">
+        <div class="terminal-header">
+            <div class="window-controls">
+                <span class="close"></span><span class="min"></span><span class="max"></span>
+            </div>
+            <div class="title">./BSIT_Y2_S1/schedule.exe</div>
+        </div>
+
+        <div class="content-area">
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="playTabSound(); switchDay('Mon')">Mon.js</button>
+                <button class="tab-btn" onclick="playTabSound(); switchDay('Tue')">Tue.js</button>
+                <button class="tab-btn" onclick="playTabSound(); switchDay('Wed')">Wed.js</button>
+                <button class="tab-btn" onclick="playTabSound(); switchDay('Thu')">Thu.js</button>
+                <button class="tab-btn" onclick="playTabSound(); switchDay('Fri')">Fri.js</button>
+            </div>
+
+            <div class="schedule-wrapper">
+                <!-- MONDAY -->
+                <div id="Mon" class="schedule-day active">
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">FILIPINO 1</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mrs. Basister</span> | Loc: Rm. 304-306</div>
+                    </article>
+                    <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">PLATFORM TECHNOLOGIES</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">DATA STRUCTURE & ALGORITHMS</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                </div>
+
+                <!-- TUESDAY -->
+                <div id="Tue" class="schedule-day">
+                    <article class="class-card type-sync">
+                        <div class="class-header">
+                            <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">DISCRETE MATHEMATICS</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mrs. Rojo</span> | Loc: ONLINE-S</div>
+                    </article>
+                    <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
+                </div>
+
+                <!-- WEDNESDAY -->
+                <div id="Wed" class="schedule-day">
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">PHYSICAL EDUCATION 3</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">ART APPRECIATION</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                    </article>
+                    <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">FILIPINO 1</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mrs. Basister</span> | Loc: Rm. 304-306</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">HUMAN COMPUTER INTERACTION 2</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Rm. 301</div>
+                    </article>
+                </div>
+
+                <!-- THURSDAY -->
+                <div id="Thu" class="schedule-day">
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">OBJECT-ORIENTED PROGRAMMING</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Rm. 301</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">DISCRETE MATHEMATICS</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mrs. Rojo</span> | Loc: Comp. Lab</div>
+                    </article>
+                    <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">HUMAN COMPUTER INTERACTION 2</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                </div>
+
+                <!-- FRIDAY -->
+                <div id="Fri" class="schedule-day">
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">PLATFORM TECHNOLOGIES</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">ART APPRECIATION</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                    </article>
+                    <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">DATA STRUCTURE & ALGORITHMS</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                    <article class="class-card type-f2f">
+                        <div class="class-header">
+                            <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">OBJECT-ORIENTED PROGRAMMING</div></div>
+                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                        </div>
+                        <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- AUDIO SYNTHESIS ENGINE (Web Audio API) ---
+    let audioCtx;
+
+    function initAudioEngine() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const bgOsc = audioCtx.createOscillator();
+        const bgFilter = audioCtx.createBiquadFilter();
+        const bgGain = audioCtx.createGain();
+        
+        bgOsc.type = 'sawtooth';
+        bgOsc.frequency.value = 45; 
+        bgFilter.type = 'lowpass';
+        bgFilter.frequency.value = 200;
+        bgGain.gain.value = 0.08; 
+        
+        bgOsc.connect(bgFilter);
+        bgFilter.connect(bgGain);
+        bgGain.connect(audioCtx.destination);
+        bgOsc.start();
+
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                playDataBlip();
+            }
+        }, 150);
+    }
+
+    function playDataBlip() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(Math.random() * 2000 + 1500, audioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playTabSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playSuccessSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); 
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+    }
+
+    function bootSystem() {
+        const bootScreen = document.getElementById('boot-screen');
+        const app = document.getElementById('app-container');
+        
+        initAudioEngine();
+        playSuccessSound();
+
+        gsap.to(bootScreen, {
+            opacity: 0, duration: 0.5, onComplete: () => {
+                bootScreen.style.display = 'none';
+                app.style.display = 'flex';
+                
+                startMatrixRain();
+                
+                gsap.from("#terminal", { scale: 0.9, opacity: 0, filter: "contrast(3)", duration: 0.8, ease: "power2.out" });
+                
+                const daysMap = ['Mon', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon'];
+                const today = new Date().getDay();
+                const initDayId = daysMap[today];
+                
+                document.querySelectorAll('.schedule-day').forEach(day => day.classList.remove('active'));
+                document.getElementById(initDayId).classList.add('active');
+                document.querySelector(`.tab-btn[onclick*="${initDayId}"]`).classList.add('active');
+                
+                gsap.from(".class-card", { x: -50, opacity: 0, duration: 0.5, stagger: 0.1, ease: "power2.out", delay: 0.3 });
+            }
+        });
+    }
+
+    function startMatrixRain() {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%""\'#&_(),.;:?!\\|{}<>[]^~';
+        const matrix = letters.split('');
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0'; 
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrix[Math.floor(Math.random() * matrix.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    }
+
+    let isAnimating = false;
+
+    function switchDay(dayId) {
+        if (isAnimating) return;
+        const currentDay = document.querySelector('.schedule-day.active');
+        const nextDay = document.getElementById(dayId);
+        if (currentDay === nextDay) return;
+        isAnimating = true;
+
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.tab-btn[onclick*="${dayId}"]`).classList.add('active');
+
+        gsap.to(currentDay.children, {
+            x: 50, opacity: 0, duration: 0.2, stagger: 0.05, ease: "power1.in",
+            onComplete: () => {
+                currentDay.classList.remove('active');
+                gsap.set(currentDay.children, { x: 0, opacity: 1 });
+                nextDay.classList.add('active');
+                gsap.fromTo(nextDay.children, 
+                    { x: -50, opacity: 0 }, 
+                    { x: 0, opacity: 1, duration: 0.4, stagger: 0.1, ease: "power2.out", onComplete: () => { isAnimating = false; } }
+                );
+            }
+        });
+    }
+
+    const quotes = [
+        "Compilation successful! > Keep building your logic. Even the hardest Java concepts become second nature with practice.",
+        "Query Executed! > Another step closer to mastering those database structures. Your SQL skills are leveling up.",
+        "Exit code 0! > Whether you are debugging complex C pointers or learning new syntax, consistency is your ultimate framework.",
+        "Runtime error avoided! > Grab some caffeine. Great software engineers aren't born; they are built one line of code at a time.",
+        "System updated! > Keep grinding. Every line of code and every class attended writes the script of your future."
+    ];
+    let typingInterval;
+
+    function executeClass(event) {
+        // Play Audio First!
+        playSuccessSound();
+
+        const btn = event.currentTarget;
+        btn.innerHTML = "[COMPILED]";
+        btn.style.color = "#000";
+        btn.style.backgroundColor = "#00ff41";
+        btn.style.pointerEvents = "none";
+
+        confetti({
+            particleCount: 60, spread: 80, origin: { y: 0.6 },
+            colors: ['#00ff41', '#00d2ff', '#ffffff'],
+            shapes: ['square'], gravity: 1.5, scalar: 0.8
+        });
+
+        const flash = document.getElementById('hard-flash');
+        gsap.to(flash, {
+            opacity: 1, duration: 0.05, 
+            onComplete: () => {
+                gsap.to(flash, { opacity: 0, duration: 0.5, ease: "power2.out" });
+                openMotivationModal();
+            }
+        });
+    }
+
+    function openMotivationModal() {
+        const overlay = document.getElementById('modal-overlay');
+        const box = document.getElementById('modal-box');
+        const textElement = document.getElementById('typewriter-text');
+        textElement.innerHTML = ""; 
+        
+        gsap.to(overlay, { opacity: 1, duration: 0.3, pointerEvents: "auto" });
+        gsap.to(box, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.5)" });
+
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        let i = 0;
+        clearInterval(typingInterval);
+
+        const typeSoundInterval = setInterval(() => {
+            if (i < randomQuote.length) playTabSound(); 
+            else clearInterval(typeSoundInterval);
+        }, 30);
+
+        typingInterval = setInterval(() => {
+            if (i < randomQuote.length) {
+                textElement.innerHTML += randomQuote.charAt(i);
+                i++;
+            } else {
+                clearInterval(typingInterval);
+            }
+        }, 30); 
+    }
+
+    function closeModal() {
+        playTabSound();
+        const overlay = document.getElementById('modal-overlay');
+        const box = document.getElementById('modal-box');
+        gsap.to(box, { opacity: 0, scale: 0.8, duration: 0.3 });
+        gsap.to(overlay, { opacity: 0, duration: 0.3, pointerEvents: "none", delay: 0.1 });
+    }
+</script>
+
+</body>
+</html>
