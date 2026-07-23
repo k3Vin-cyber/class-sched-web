@@ -37,7 +37,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px; /* Keeps terminal from touching phone edges */
+            padding: 15px; 
         }
 
         #boot-screen {
@@ -73,15 +73,18 @@
             display: flex; justify-content: space-between; align-items: center;
         }
 
+        .window-controls { display: flex; align-items: center; flex: 1; }
         .window-controls span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
         .close { background: #ff5f56; } .min { background: #ffbd2e; } .max { background: #27c93f; }
-        .title { color: var(--primary-neon); font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; text-align: right; }
+        
+        .sys-clock { color: var(--primary-neon); font-size: 0.85rem; font-weight: 600; text-align: center; flex: 1; letter-spacing: 1px; }
+        
+        .title { color: var(--primary-neon); font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; text-align: right; flex: 1; }
 
         .content-area { padding: 20px; flex-grow: 1; overflow-y: auto; position: relative; }
         .content-area::-webkit-scrollbar { width: 8px; }
         .content-area::-webkit-scrollbar-thumb { background: var(--secondary-neon); }
 
-        /* TAB NAVIGATION - Updated for Mobile Wrapping */
         .tab-nav { 
             display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; 
             margin-bottom: 20px; border-bottom: 1px dashed var(--text-muted); padding-bottom: 15px; 
@@ -103,24 +106,41 @@
         .type-sync { border-left-color: var(--accent-blue); }
         .type-break { border-left-color: var(--accent-orange); }
 
-        .class-card:hover { background: rgba(0, 40, 0, 0.6); border-color: var(--primary-neon); box-shadow: var(--border-glow); transform: translateX(5px); }
+        .class-card:hover { background: rgba(0, 40, 0, 0.6); border-color: var(--primary-neon); box-shadow: var(--border-glow); transform: translateX(2px); }
 
         .class-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .time-tag { background: #111; color: var(--text-muted); padding: 2px 8px; font-size: 0.8rem; border: 1px solid var(--text-muted); margin-bottom: 8px; display: inline-block; }
         .class-card:hover .time-tag { color: var(--primary-neon); border-color: var(--primary-neon); }
         .class-name { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
-        .class-details { font-size: 0.9rem; color: #aaa; }
+        .class-details { font-size: 0.9rem; color: #aaa; margin-bottom: 10px; }
         .keyword { color: var(--primary-neon); }
         .type-sync .keyword { color: var(--accent-blue); }
 
-        .execute-btn {
+        /* BUTTONS */
+        .btn-group { display: flex; gap: 10px; }
+        .execute-btn, .sys-log-btn {
             background: transparent; border: 1px solid var(--primary-neon); color: var(--primary-neon);
             padding: 8px 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-size: 0.8rem;
         }
+        .sys-log-btn { border-color: var(--text-muted); color: var(--text-muted); }
+        .sys-log-btn:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
+        
         .type-sync .execute-btn { border-color: var(--accent-blue); color: var(--accent-blue); }
-        .type-break .execute-btn { display: none; }
+        .type-break .btn-group { display: none; }
         .execute-btn:hover { background: var(--primary-neon); color: #000; box-shadow: 0 0 15px var(--primary-neon); }
 
+        /* SYS LOG PANELS (NOTEPAD ONLY) */
+        .sys-panel { display: none; margin-top: 15px; border-top: 1px dashed #333; padding-top: 15px; }
+        .panel-title { font-size: 0.8rem; color: var(--accent-orange); margin-bottom: 8px; font-weight: bold; }
+        
+        .sys-textarea {
+            width: 100%; min-height: 80px; background: rgba(0,0,0,0.5); border: 1px solid #333;
+            color: var(--primary-neon); padding: 10px; font-family: 'Fira Code', monospace; font-size: 0.85rem;
+            resize: vertical; transition: border 0.3s;
+        }
+        .sys-textarea:focus { outline: none; border-color: var(--primary-neon); }
+
+        /* MODAL */
         #modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); 
             display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; backdrop-filter: blur(5px); padding: 15px;
@@ -135,31 +155,20 @@
         .close-btn:hover { background: var(--primary-neon); color: #000; border-color: var(--primary-neon); }
         .typed-cursor { opacity: 1; animation: typedjsBlink 0.7s infinite; }
 
-        /* ========================================= */
-        /* 📱 MOBILE RESPONSIVENESS PATCH            */
-        /* ========================================= */
         @media (max-width: 600px) {
             .boot-text { font-size: 1.2rem; }
             .terminal-header { padding: 10px; }
-            .title { font-size: 0.7rem; }
-            
+            .title, .sys-clock { font-size: 0.7rem; }
             .content-area { padding: 10px; }
-            
             .tab-btn { font-size: 0.85rem; padding: 8px 12px; }
-            .tab-btn.active::before { content: ''; } /* Remove arrow on mobile to save space */
-            
             .class-card { padding: 12px 15px; }
-            .class-header { flex-direction: column; align-items: stretch; } /* Stack title and button */
-            
+            .class-header { flex-direction: column; align-items: stretch; } 
             .class-name { font-size: 1.1rem; }
-            .class-details { font-size: 0.8rem; margin-bottom: 10px; }
-            
-            .execute-btn { 
-                width: 100%; /* Make button full width for easy thumb tapping */
-                text-align: center; 
-                padding: 10px;
-                margin-top: 5px;
-            }
+            .class-details { font-size: 0.8rem; margin-bottom: 5px; }
+            .btn-group { flex-direction: row; width: 100%; margin-top: 10px; }
+            .sys-log-btn, .execute-btn { flex: 1; text-align: center; padding: 10px; }
+            .sys-clock { display: block; flex: 1.5; } 
+            .title { flex: 0.5; text-align: right;} 
         }
     </style>
 </head>
@@ -189,6 +198,7 @@
             <div class="window-controls">
                 <span class="close"></span><span class="min"></span><span class="max"></span>
             </div>
+            <div id="sys-clock" class="sys-clock">[ 00:00:00 ]</div>
             <div class="title">./schedule.exe</div>
         </div>
 
@@ -204,131 +214,206 @@
             <div class="schedule-wrapper">
                 <!-- MONDAY -->
                 <div id="Mon" class="schedule-day active">
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="mon-fil1">
                         <div class="class-header">
                             <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">FILIPINO 1</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group">
+                                <button class="sys-log-btn" onclick="togglePanel('mon-fil1')">./sys_log</button>
+                                <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            </div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mrs. Basister</span> | Loc: Rm. 304-306</div>
+                        <div class="sys-panel" id="panel-mon-fil1">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('mon-fil1', this.value)"></textarea>
+                        </div>
                     </article>
+
                     <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
-                    <article class="class-card type-f2f">
+                    
+                    <article class="class-card type-f2f" data-id="mon-pt">
                         <div class="class-header">
                             <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">PLATFORM TECHNOLOGIES</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group">
+                                <button class="sys-log-btn" onclick="togglePanel('mon-pt')">./sys_log</button>
+                                <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            </div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-mon-pt">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('mon-pt', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+
+                    <article class="class-card type-f2f" data-id="mon-dsa">
                         <div class="class-header">
                             <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">DATA STRUCTURE & ALGORITHMS</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group">
+                                <button class="sys-log-btn" onclick="togglePanel('mon-dsa')">./sys_log</button>
+                                <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            </div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-mon-dsa">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('mon-dsa', this.value)"></textarea>
+                        </div>
                     </article>
                 </div>
 
                 <!-- TUESDAY -->
                 <div id="Tue" class="schedule-day">
-                    <article class="class-card type-sync">
+                    <article class="class-card type-sync" data-id="tue-dm">
                         <div class="class-header">
                             <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">DISCRETE MATHEMATICS</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group">
+                                <button class="sys-log-btn" onclick="togglePanel('tue-dm')">./sys_log</button>
+                                <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            </div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mrs. Rojo</span> | Loc: ONLINE-S</div>
+                        <div class="sys-panel" id="panel-tue-dm">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('tue-dm', this.value)"></textarea>
+                        </div>
                     </article>
                     <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
                 </div>
 
                 <!-- WEDNESDAY -->
                 <div id="Wed" class="schedule-day">
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="wed-pe">
                         <div class="class-header">
                             <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">PHYSICAL EDUCATION 3</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('wed-pe')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                        <div class="sys-panel" id="panel-wed-pe">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('wed-pe', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="wed-art">
                         <div class="class-header">
                             <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">ART APPRECIATION</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('wed-art')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                        <div class="sys-panel" id="panel-wed-art">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('wed-art', this.value)"></textarea>
+                        </div>
                     </article>
                     <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="wed-fil1">
                         <div class="class-header">
                             <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">FILIPINO 1</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('wed-fil1')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mrs. Basister</span> | Loc: Rm. 304-306</div>
+                        <div class="sys-panel" id="panel-wed-fil1">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('wed-fil1', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="wed-hci">
                         <div class="class-header">
                             <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">HUMAN COMPUTER INTERACTION 2</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('wed-hci')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Rm. 301</div>
+                        <div class="sys-panel" id="panel-wed-hci">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('wed-hci', this.value)"></textarea>
+                        </div>
                     </article>
                 </div>
 
                 <!-- THURSDAY -->
                 <div id="Thu" class="schedule-day">
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="thu-oop">
                         <div class="class-header">
                             <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">OBJECT-ORIENTED PROGRAMMING</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('thu-oop')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Rm. 301</div>
+                        <div class="sys-panel" id="panel-thu-oop">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('thu-oop', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="thu-dm">
                         <div class="class-header">
                             <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">DISCRETE MATHEMATICS</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('thu-dm')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mrs. Rojo</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-thu-dm">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('thu-dm', this.value)"></textarea>
+                        </div>
                     </article>
                     <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="thu-hci">
                         <div class="class-header">
                             <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">HUMAN COMPUTER INTERACTION 2</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('thu-hci')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-thu-hci">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('thu-hci', this.value)"></textarea>
+                        </div>
                     </article>
                 </div>
 
                 <!-- FRIDAY -->
                 <div id="Fri" class="schedule-day">
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="fri-pt">
                         <div class="class-header">
                             <div><div class="time-tag">08:00 - 10:00</div><div class="class-name">PLATFORM TECHNOLOGIES</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('fri-pt')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-fri-pt">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('fri-pt', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="fri-art">
                         <div class="class-header">
                             <div><div class="time-tag">10:30 - 12:00</div><div class="class-name">ART APPRECIATION</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('fri-art')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Ollosa</span> | Loc: PE Rm.</div>
+                        <div class="sys-panel" id="panel-fri-art">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('fri-art', this.value)"></textarea>
+                        </div>
                     </article>
                     <article class="class-card type-break"><div class="time-tag">12:00 - 13:00</div><div class="class-name">SYSTEM.IDLE (LUNCH)</div></article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="fri-dsa">
                         <div class="class-header">
                             <div><div class="time-tag">13:00 - 14:30</div><div class="class-name">DATA STRUCTURE & ALGORITHMS</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('fri-dsa')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-fri-dsa">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('fri-dsa', this.value)"></textarea>
+                        </div>
                     </article>
-                    <article class="class-card type-f2f">
+                    <article class="class-card type-f2f" data-id="fri-oop">
                         <div class="class-header">
                             <div><div class="time-tag">15:00 - 16:30</div><div class="class-name">OBJECT-ORIENTED PROGRAMMING</div></div>
-                            <button class="execute-btn" onclick="executeClass(event)">./execute</button>
+                            <div class="btn-group"><button class="sys-log-btn" onclick="togglePanel('fri-oop')">./sys_log</button><button class="execute-btn" onclick="executeClass(event)">./execute</button></div>
                         </div>
                         <div class="class-details">Instructor: <span class="keyword">Mr. Porras</span> | Loc: Comp. Lab</div>
+                        <div class="sys-panel" id="panel-fri-oop">
+                            <div class="panel-title">>> NOTEPAD.txt</div>
+                            <textarea class="sys-textarea" placeholder="Enter notes..." oninput="saveNote('fri-oop', this.value)"></textarea>
+                        </div>
                     </article>
                 </div>
             </div>
@@ -339,6 +424,7 @@
 <script>
     let audioCtx;
 
+    // ----- AUDIO SYSTEM -----
     function initAudioEngine() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
@@ -396,12 +482,26 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.6);
     }
 
+    // ----- CLOCK SYSTEM -----
+    function startClock() {
+        const clockEl = document.getElementById('sys-clock');
+        setInterval(() => {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            clockEl.innerText = `[ ${hours}:${minutes}:${seconds} ]`;
+        }, 1000);
+    }
+
+    // ----- BOOT & MATRIX LOGIC -----
     function bootSystem() {
         const bootScreen = document.getElementById('boot-screen');
         const app = document.getElementById('app-container');
         
         initAudioEngine();
         playSuccessSound();
+        startClock(); 
 
         gsap.to(bootScreen, {
             opacity: 0, duration: 0.5, onComplete: () => {
@@ -411,9 +511,8 @@
                 
                 gsap.from("#terminal", { scale: 0.9, opacity: 0, filter: "contrast(3)", duration: 0.8, ease: "power2.out" });
                 
-                const daysMap = ['Mon', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon'];
-                const today = new Date().getDay();
-                const initDayId = daysMap[today];
+                // HARDCODED OVERRIDE: Always force Monday as the default view
+                const initDayId = 'Mon'; 
                 
                 document.querySelectorAll('.schedule-day').forEach(day => day.classList.remove('active'));
                 document.getElementById(initDayId).classList.add('active');
@@ -461,7 +560,6 @@
     }
 
     let isAnimating = false;
-
     function switchDay(dayId) {
         if (isAnimating) return;
         const currentDay = document.querySelector('.schedule-day.active');
@@ -471,6 +569,8 @@
 
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.tab-btn[onclick*="${dayId}"]`).classList.add('active');
+
+        document.querySelectorAll('.sys-panel').forEach(panel => panel.style.display = 'none');
 
         gsap.to(currentDay.children, {
             x: 50, opacity: 0, duration: 0.2, stagger: 0.05, ease: "power1.in",
@@ -486,6 +586,39 @@
         });
     }
 
+    // ----- NOTEPAD SYSTEM -----
+    function togglePanel(id) {
+        playTabSound();
+        const panel = document.getElementById(`panel-${id}`);
+        
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            // Un-hide it first
+            panel.style.display = 'block';
+            
+            // USE fromTo: Force it to start at 0, but guarantee it ends at 1 (visible)
+            gsap.fromTo(panel, 
+                { height: 0, opacity: 0 }, 
+                { height: "auto", opacity: 1, duration: 0.3, ease: "power2.out" }
+            );
+            
+            loadPanelData(id);
+        } else {
+            // Animate it closed
+            gsap.to(panel, {
+                height: 0, 
+                opacity: 0, 
+                duration: 0.3, 
+                onComplete: () => { 
+                    // Hide it, then reset the styles so it doesn't stay invisible next time
+                    panel.style.display = 'none'; 
+                    panel.style.height = 'auto'; 
+                    panel.style.opacity = '1';
+                }
+            });
+        }
+    }
+
+    // ----- MODAL SYSTEM -----
     const quotes = [
         "Compilation successful! > Keep building your logic. Even the hardest Java concepts become second nature with practice.",
         "Query Executed! > Another step closer to mastering those database structures. Your SQL skills are leveling up.",
